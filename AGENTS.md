@@ -32,8 +32,10 @@ O contrato HTTP executavel esta em `/v3/api-docs/clickforte-web` e a interface v
 - A producao usa a primeira aba e fica somente em memoria; reiniciar o processo apaga a programacao.
 - Cada conta Omie possui credenciais isoladas; o App Secret nunca deve ser exibido e e cifrado antes de ir ao banco.
 - Toda consulta futura a Omie deve receber explicitamente o identificador da conta usada.
+- `/omie` contem prototipos e contratos visuais baseados nos servicos oficiais. Nao trate dados de exemplo ou botoes desabilitados como uma integracao pronta.
+- Ao implementar uma dessas telas, mantenha endpoint, chamada principal, filtros e colunas em `OmieTelaCatalogo` sincronizados com a documentacao oficial.
 - Alterar `APP_CRYPTO_PASSWORD` ou `APP_CRYPTO_SALT` invalida segredos ja cifrados.
-- `/integracoes/**` e `/h2-console/**` exigem login. As demais telas e a documentacao Swagger sao publicas.
+- `/integracoes/**` e `/h2-console/**` exigem login. `/omie/**`, as demais telas e a documentacao Swagger sao publicas.
 - Os POSTs MVC usam CSRF e retornam redirecionamentos. Nao os trate como API JSON.
 
 ## Como implementar uma funcionalidade

@@ -33,6 +33,47 @@
     border-radius: 50%;
 }
 
+.dev-sidebar {
+    position: sticky;
+    top: 1rem;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .75rem;
+}
+
+.dev-sidebar-heading {
+    padding: 1rem;
+    color: #fff;
+    background: #212529;
+}
+
+.dev-sidebar-heading small,
+.dev-sidebar-link small {
+    display: block;
+    margin-top: .2rem;
+    opacity: .72;
+}
+
+.dev-sidebar-link {
+    display: block;
+    padding: .75rem 1rem;
+    color: #343a40;
+    text-decoration: none;
+    border-top: 1px solid #edf0f2;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.dev-sidebar-link:hover,
+.dev-sidebar-link.active {
+    color: #0a58ca;
+    background: #e7f1ff;
+}
+
+.omie-card {
+    border-top: 3px solid #0d6efd;
+}
+
 /* Caixa dos gráficos com altura controlada (evita canvas gigante no mobile) */
 .grafico-box {
     position: relative;
@@ -60,5 +101,8 @@ table.tabela-filtravel tr.filtros input {
         order: 3;
         width: 100%;
         justify-content: center;
+    }
+    .dev-sidebar {
+        position: static;
     }
 }

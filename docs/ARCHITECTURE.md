@@ -106,12 +106,15 @@ Esta informacao nao e persistente. Um restart, deploy ou nova instancia perde a 
 5. `CryptoService` cifra separadamente o App Secret de cada conta antes da persistencia.
 6. `IntegracaoService.credenciais(contaId)` e o ponto de acesso futuro para o cliente Omie.
 
+`GET /omie` apresenta o catalogo de telas sugeridas e `GET /omie/{slug}` abre um prototipo navegavel.
+O catalogo em `OmieTelaCatalogo` centraliza endpoint, chamada principal, filtros, colunas e acoes esperadas.
+Essas paginas sao especificacoes para desenvolvimento: os formularios e botoes permanecem desabilitados ate a
+implementacao de um `OmieClient` executado somente no servidor.
+
 As chamadas futuras para a API Omie devem usar `POST` com `Content-Type: application/json`, mesmo em
 operacoes de consulta. O corpo segue o contrato `call`, `app_key`, `app_secret` e `param`. Cada familia
 de servicos possui um endpoint proprio, definido na documentacao oficial da Omie. O App Secret deve ser
 injetado apenas no cliente executado no servidor e nunca enviado para templates ou JavaScript.
-
-Existe um unico registro de integracao, com `id = 1`.
 
 ## Rotas HTTP
 
@@ -126,6 +129,8 @@ Existe um unico registro de integracao, com `id = 1`.
 | GET | `/integracoes` | Sessao | Configuracao Omie |
 | POST | `/integracoes` | Sessao + CSRF | Cria ou atualiza uma conta Omie |
 | POST | `/integracoes/excluir` | Sessao + CSRF | Exclui uma conta Omie |
+| GET | `/omie` | Publica | Catalogo de telas sugeridas para a API Omie |
+| GET | `/omie/{slug}` | Publica | Prototipo e contrato da tela Omie selecionada |
 | GET | `/swagger-ui.html` | Publica | Swagger UI |
 | GET | `/v3/api-docs/clickforte-web` | Publica | Contrato OpenAPI JSON |
 | GET | `/h2-console` | Sessao | Console do banco, habilitado por configuracao |

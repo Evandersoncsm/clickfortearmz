@@ -49,8 +49,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        // Área protegida: integrações e console do banco
+                        // Área protegida: administração das credenciais e console do banco
                         .requestMatchers("/integracoes/**", "/h2-console/**").authenticated()
+                        // Relatórios e protótipos Omie ficam disponíveis sem login.
+                        .requestMatchers("/omie/**").permitAll()
                         // Contrato HTTP e interface Swagger ficam públicos para consulta.
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Demais telas (index, produção, relatório, importações) são públicas

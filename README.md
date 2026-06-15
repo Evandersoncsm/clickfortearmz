@@ -13,6 +13,7 @@ Requisitos: Java 21. O Maven Wrapper ja esta no repositorio.
 Acessos locais:
 
 - Aplicacao: http://localhost:8080
+- Relatorios e prototipos Omie: http://localhost:8080/omie
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - OpenAPI JSON: http://localhost:8080/v3/api-docs/clickforte-web
 - Console H2: http://localhost:8080/h2-console

@@ -5,6 +5,7 @@ import com.app.and.application.port.in.ImportarContagemUseCase;
 import com.app.and.application.port.in.ListarDiasContagemUseCase;
 import com.app.and.domain.model.ContagemDiaria;
 import com.app.and.infrastructure.spreadsheet.PlanilhaInvalidaException;
+import com.app.and.integracao.OmieTelaCatalogo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,18 +30,21 @@ public class RelatorioController {
     private final ImportarContagemUseCase importarContagem;
     private final GerarRelatorioUseCase gerarRelatorio;
     private final ListarDiasContagemUseCase listarDias;
+    private final OmieTelaCatalogo omieTelaCatalogo;
 
     public RelatorioController(ImportarContagemUseCase importarContagem, GerarRelatorioUseCase gerarRelatorio,
-                               ListarDiasContagemUseCase listarDias) {
+                               ListarDiasContagemUseCase listarDias, OmieTelaCatalogo omieTelaCatalogo) {
         this.importarContagem = importarContagem;
         this.gerarRelatorio = gerarRelatorio;
         this.listarDias = listarDias;
+        this.omieTelaCatalogo = omieTelaCatalogo;
     }
 
     @GetMapping("/")
     @Operation(summary = "Exibe a pagina inicial de importacao")
     @ApiResponse(responseCode = "200", description = "Pagina HTML inicial")
-    public String index() {
+    public String index(Model model) {
+        model.addAttribute("omieTelas", omieTelaCatalogo.listar());
         return "index";
     }
 

@@ -39,7 +39,7 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
                 .group("clickforte-web")
                 .displayName("Aplicacao web ClickForte")
-                .pathsToMatch("/", "/login", "/importar", "/relatorio", "/producao/**", "/integracoes/**")
+                .pathsToMatch("/", "/login", "/importar", "/relatorio", "/producao/**", "/integracoes/**", "/omie/**")
                 .build();
     }
 }

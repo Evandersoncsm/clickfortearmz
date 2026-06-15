@@ -22,6 +22,7 @@
             <span>Ambiente de desenvolvimento ClickForte</span>
         </div>
         <div class="d-flex gap-2">
+            <a th:href="@{/omie}" class="btn btn-sm btn-outline-light">Telas Omie</a>
             <a th:href="@{/integracoes}" class="btn btn-sm btn-outline-light">Integrações</a>
             <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" data-turbo="false" class="mb-0">
                 <button type="submit" class="btn btn-sm btn-outline-light">Sair</button>
@@ -30,11 +31,32 @@
     </div>
 </nav>
 
-<div class="container py-5">
+<div class="container-fluid py-4 px-lg-4">
     <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
     <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
 
-    <div class="row g-4 justify-content-center">
+    <div class="row g-4">
+        <aside class="col-lg-3 col-xl-2">
+            <div class="dev-sidebar shadow-sm">
+                <div class="dev-sidebar-heading">
+                    <div class="d-flex align-items-center gap-2 fw-bold">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Claude_AI_symbol.svg/960px-Claude_AI_symbol.svg.png"
+                             alt="Claude AI" width="22" height="22">
+                        Sugestões para Claude
+                    </div>
+                    <small>Telas baseadas na API Omie</small>
+                </div>
+                <a th:href="@{/omie}" class="dev-sidebar-link active">Visão geral das telas</a>
+                <a th:each="tela : ${omieTelas}" th:href="@{/omie/{slug}(slug=${tela.slug})}"
+                   class="dev-sidebar-link">
+                    <span th:text="${tela.titulo}">Produtos</span>
+                    <small th:text="${tela.chamadaPrincipal}">ListarProdutos</small>
+                </a>
+            </div>
+        </aside>
+
+        <main class="col-lg-9 col-xl-10">
+        <div class="row g-4 justify-content-center">
 
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
@@ -159,6 +181,8 @@ Content-Type: application/json
             </div>
         </div>
 
+        </div>
+        </main>
     </div>
 </div>
 </body>

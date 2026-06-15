@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${telaSelecionada == null ? 'Telas Omie - ClickForte' : telaSelecionada.titulo + ' - ClickForte'}">
+        Telas Omie - ClickForte
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/app.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid px-lg-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 mb-0" th:href="@{/}">
+            <img src="https://war-machine.s3.sa-east-1.amazonaws.com/seller/521/logo/96169866-logo-alta-2552x1080.png"
+                 alt="ClickForte Armazenagem" height="40">
+        </a>
+        <div class="ambiente-desenvolvimento" title="Catálogo para evolução por IA">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Claude_AI_symbol.svg/960px-Claude_AI_symbol.svg.png"
+                 alt="Claude AI">
+            <span>Especificações para desenvolvimento</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/integracoes}" class="btn btn-sm btn-outline-light">Contas Omie</a>
+            <a th:href="@{/}" class="btn btn-sm btn-outline-light">Início</a>
+            <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="mb-0">
+                <button type="submit" class="btn btn-sm btn-outline-light">Sair</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid py-4 px-lg-4">
+    <div class="row g-4">
+        <aside class="col-lg-3 col-xl-2">
+            <div class="dev-sidebar shadow-sm">
+                <div class="dev-sidebar-heading">
+                    <div class="fw-bold">Telas sugeridas</div>
+                    <small>API oficial Omie</small>
+                </div>
+                <a th:href="@{/omie}" class="dev-sidebar-link"
+                   th:classappend="${telaSelecionada == null} ? ' active' : ''">
+                    Visão geral
+                </a>
+                <a th:each="item : ${telas}" th:href="@{/omie/{slug}(slug=${item.slug})}"
+                   class="dev-sidebar-link"
+                   th:classappend="${telaSelecionada != null and telaSelecionada.slug == item.slug} ? ' active' : ''">
+                    <span th:text="${item.titulo}">Produtos</span>
+                    <small th:text="${item.grupo}">Cadastros</small>
+                </a>
+            </div>
+        </aside>
+
+        <main class="col-lg-9 col-xl-10">
+            <div th:if="${telaSelecionada == null}">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <span class="badge text-bg-warning mb-2">Protótipos</span>
+                        <h1 class="h3 mb-2">Mapa de telas para integração Omie</h1>
+                        <p class="text-body-secondary mb-0">
+                            Cada card define uma tela, o endpoint oficial e a chamada que o backend deverá implementar.
+                        </p>
+                    </div>
+                    <a href="https://developer.omie.com.br/service-list/" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-outline-primary">Documentação oficial</a>
+                </div>
+
+                <div class="alert alert-info">
+                    Estas telas são especificações navegáveis. Nenhuma consulta é enviada à Omie ainda e nenhuma
+                    credencial é exposta no navegador.
+                </div>
+
+                <div class="row g-4">
+                    <div th:each="item : ${telas}" class="col-md-6 col-xxl-4">
+                        <div class="card shadow-sm h-100 omie-card">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between gap-2 mb-3">
+                                    <span class="badge text-bg-light border" th:text="${item.grupo}">Estoque</span>
+                                    <span class="small text-body-secondary" th:text="|Prioridade ${item.prioridade}|">Prioridade Alta</span>
+                                </div>
+                                <h2 class="h5" th:text="${item.titulo}">Produtos</h2>
+                                <p class="text-body-secondary flex-grow-1" th:text="${item.descricao}">Descrição</p>
+                                <code class="small d-block text-break mb-3" th:text="${item.chamadaPrincipal}">ListarProdutos</code>
+                                <a th:href="@{/omie/{slug}(slug=${item.slug})}" class="btn btn-primary">Abrir protótipo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${telaSelecionada != null}">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge text-bg-warning">Protótipo</span>
+                            <span class="badge text-bg-light border" th:text="${telaSelecionada.grupo}">Estoque</span>
+                        </div>
+                        <h1 class="h3 mb-2" th:text="${telaSelecionada.titulo}">Produtos</h1>
+                        <p class="text-body-secondary mb-0" th:text="${telaSelecionada.descricao}">Descrição</p>
+                    </div>
+                    <a th:href="${telaSelecionada.documentacaoUrl}" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-outline-primary">Abrir API oficial</a>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+                        <h2 class="h6 mb-0">Filtros da consulta</h2>
+                        <span class="badge text-bg-secondary">Aguardando OmieClient</span>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(contas)}" class="alert alert-warning">
+                            Cadastre uma conta em <a th:href="@{/integracoes}">Integrações</a> antes de implementar a consulta.
+                        </div>
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6 col-xl-4">
+                                    <label class="form-label fw-semibold">Conta Omie</label>
+                                    <select class="form-select" disabled>
+                                        <option th:if="${#lists.isEmpty(contas)}">Nenhuma conta cadastrada</option>
+                                        <option th:each="conta : ${contas}" th:text="${conta.nome}">Conta Omie</option>
+                                    </select>
+                                </div>
+                                <div th:each="filtro : ${telaSelecionada.filtros}" class="col-md-6 col-xl-4">
+                                    <label class="form-label fw-semibold" th:text="${filtro}">Filtro</label>
+                                    <input type="text" class="form-control" th:placeholder="|Filtrar por ${filtro.toLowerCase()}|" disabled>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-primary" disabled>Consultar Omie</button>
+                                <button type="button" class="btn btn-outline-secondary" disabled>Limpar filtros</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h2 class="h6 mb-0">Resultado esperado</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th th:each="coluna : ${telaSelecionada.colunas}" th:text="${coluna}">Coluna</th>
+                                <th>Ações</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td th:colspan="${#lists.size(telaSelecionada.colunas) + 1}" class="text-center py-5 text-body-secondary">
+                                    Os dados aparecerão aqui após a implementação do cliente Omie no servidor.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white d-flex flex-wrap gap-2">
+                        <button th:each="acao : ${telaSelecionada.acoes}" type="button"
+                                class="btn btn-sm btn-outline-secondary" disabled th:text="${acao}">Ação</button>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h2 class="h6 mb-0">Contrato para implementação</h2>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-3">
+                            <dt class="col-sm-3">Endpoint</dt>
+                            <dd class="col-sm-9"><code class="text-break" th:text="${telaSelecionada.endpoint}">endpoint</code></dd>
+                            <dt class="col-sm-3">Chamada principal</dt>
+                            <dd class="col-sm-9"><code th:text="${telaSelecionada.chamadaPrincipal}">ListarProdutos</code></dd>
+                            <dt class="col-sm-3">Método HTTP</dt>
+                            <dd class="col-sm-9"><code>POST</code></dd>
+                        </dl>
+                        <pre class="bg-dark text-light rounded p-3 overflow-auto mb-3"><code th:text="${telaSelecionada.exemploPost}">POST</code></pre>
+                        <div class="alert alert-warning mb-0">
+                            O backend deve buscar App Key e App Secret por <code>contaId</code>. O navegador nunca recebe o segredo.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
