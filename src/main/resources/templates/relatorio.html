@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="turbo-cache-control" content="no-cache">
+    <title>Relatório de Contagem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/app.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        /* Cores da coluna STATUS iguais às da planilha */
+        .status-CRITICO { background-color: #ff0000 !important; color: #fff; font-weight: 600; }
+        .status-REGULAR { background-color: #ffff00 !important; color: #000; font-weight: 600; }
+        .status-OK,
+        .status-INDEFINIDO { background-color: transparent; }
+        .cell-status { text-align: center; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2 mb-0" th:href="@{/}">
+            <img src="https://war-machine.s3.sa-east-1.amazonaws.com/seller/521/logo/96169866-logo-alta-2552x1080.png"
+                 alt="ClickForte Armazenagem" height="40">
+        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#modalDias">
+                📅 Dias <span class="badge bg-light text-dark" th:text="${#lists.size(dias)}">0</span>
+            </button>
+            <a th:href="@{/producao}" class="btn btn-sm btn-outline-light">Produção</a>
+            <a th:href="@{/}" class="btn btn-sm btn-outline-light">Nova importação</a>
+            <a th:href="@{/integracoes}" class="btn btn-sm btn-outline-light">Integrações</a>
+            <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" data-turbo="false" class="mb-0">
+                <button type="submit" class="btn btn-sm btn-outline-light">Sair</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Modal: dias de contagem persistidos -->
+<div class="modal fade" id="modalDias" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dias de contagem importados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div th:if="${#lists.isEmpty(dias)}" class="p-3 text-muted">Nenhum dia importado ainda.</div>
+                <div class="list-group list-group-flush">
+                    <a th:each="dia : ${dias}" th:href="@{/relatorio(dia=${dia.chave})}"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       th:classappend="${dia.chave == diaSelecionado} ? 'active'">
+                        <span>
+                            <strong th:text="${dia.aba}">aba</strong>
+                            <span class="text-muted" th:if="${dia.data}"
+                                  th:text="' — ' + ${#temporals.format(dia.data, 'dd/MM/yyyy')}"></span>
+                        </span>
+                        <span class="badge bg-secondary rounded-pill" th:text="${dia.totalItens} + ' SKUs'">0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+    <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+    <!-- Sem dados -->
+    <div th:if="${relatorio.vazio}" class="alert alert-warning">
+        Nenhuma contagem importada ainda. <a th:href="@{/}">Importe uma planilha</a>.
+    </div>
+
+    <div th:unless="${relatorio.vazio}">
+
+        <!-- Cabeçalho -->
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="mb-0">Dia mais recente</h4>
+                <span class="text-muted">
+                    Aba <strong th:text="${relatorio.aba}"></strong>
+                    <span th:if="${relatorio.dataContagem}">
+                        — <span th:text="${#temporals.format(relatorio.dataContagem, 'dd/MM/yyyy')}"></span>
+                    </span>
+                </span>
+            </div>
+            <span class="badge bg-secondary fs-6" th:text="${relatorio.totalItens} + ' SKUs'">0 SKUs</span>
+        </div>
+
+        <!-- Cards de métricas -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card text-bg-primary shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-uppercase small opacity-75">Total de SKUs</div>
+                        <div class="display-6 fw-bold" th:text="${relatorio.totalItens}">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-bg-danger shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-uppercase small opacity-75">Críticos</div>
+                        <div class="display-6 fw-bold"
+                             th:text="${relatorio.quantidade(T(com.app.and.domain.model.StatusEstoque).CRITICO)}">0</div>
+                        <small th:text="${#numbers.formatDecimal(relatorio.percentual(T(com.app.and.domain.model.StatusEstoque).CRITICO), 1, 1)} + '% do total'">0%</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-bg-warning shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-uppercase small opacity-75">Regulares</div>
+                        <div class="display-6 fw-bold"
+                             th:text="${relatorio.quantidade(T(com.app.and.domain.model.StatusEstoque).REGULAR)}">0</div>
+                        <small th:text="${#numbers.formatDecimal(relatorio.percentual(T(com.app.and.domain.model.StatusEstoque).REGULAR), 1, 1)} + '% do total'">0%</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-bg-success shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-uppercase small opacity-75">Cobertura média</div>
+                        <div class="display-6 fw-bold" th:text="${#numbers.formatDecimal(relatorio.coberturaMedia, 1, 2)}">0</div>
+                        <small>meses de estoque</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white"><h6 class="mb-0">Distribuição por status</h6></div>
+                    <div class="card-body"><div class="grafico-box"><canvas id="graficoStatus"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white"><h6 class="mb-0">Top 10 saídas do dia (produção)</h6></div>
+                    <div class="card-body"><div class="grafico-box"><canvas id="graficoSaidas"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white"><h6 class="mb-0">Top 10 maiores estoques (atual)</h6></div>
+                    <div class="card-body"><div class="grafico-box"><canvas id="graficoEstoque"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens para reposição -->
+        <div class="card shadow-sm mb-4" th:if="${not #lists.isEmpty(relatorio.itensParaReposicao)}">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-danger">Itens para reposição (crítico / regular)</h5>
+                <span class="badge bg-danger"
+                      th:text="${#lists.size(relatorio.itensParaReposicao)} + ' itens'">0 itens</span>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>SKU</th>
+                        <th>Cód. Prod.</th>
+                        <th class="text-end">Contagem Atual</th>
+                        <th class="text-end">Cobertura</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${relatorio.itensParaReposicao}">
+                        <td th:text="${item.sku}"></td>
+                        <td th:text="${item.codigoProduto}"></td>
+                        <td class="text-end" th:text="${item.contagemAtual}"></td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(item.periodoEstoque, 1, 2)}"></td>
+                        <td class="cell-status" th:classappend="|status-${item.status.name()}|"
+                            th:text="${item.status}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Situação completa por SKU -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Situação completa por SKU</h5>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-striped table-hover mb-0 align-middle tabela-filtravel">
+                    <thead class="table-light">
+                    <tr>
+                        <th>SKU</th>
+                        <th>Cód. Prod.</th>
+                        <th class="text-end">Anterior</th>
+                        <th class="text-end">Receb.</th>
+                        <th class="text-end">Prod.</th>
+                        <th class="text-end">FTI</th>
+                        <th class="text-end">Atual</th>
+                        <th class="text-end">Variação</th>
+                        <th class="text-end">Cobertura</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${relatorio.itens}">
+                        <td th:text="${item.sku}"></td>
+                        <td class="text-muted small" th:text="${item.codigoProduto}"></td>
+                        <td class="text-end" th:text="${item.contagemAnterior}"></td>
+                        <td class="text-end" th:text="${item.recebimento}"></td>
+                        <td class="text-end" th:text="${item.producao}"></td>
+                        <td class="text-end" th:text="${item.fti}"></td>
+                        <td class="text-end fw-semibold" th:text="${item.contagemAtual}"></td>
+                        <td class="text-end"
+                            th:classappend="${item.variacao < 0} ? 'text-danger' : (${item.variacao > 0} ? 'text-success' : '')"
+                            th:text="${item.variacao > 0} ? '+' + ${item.variacao} : ${item.variacao}"></td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(item.periodoEstoque, 1, 2)}"></td>
+                        <td class="cell-status" th:classappend="|status-${item.status.name()}|"
+                            th:text="${item.status}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:if="${not relatorio.vazio}" th:inline="javascript">
+    (function () {
+    /*<![CDATA[*/
+    const statusLabels = [[${#lists.toList(relatorio.resumoPorStatus.keySet())}]];
+    const statusData   = [[${#lists.toList(relatorio.resumoPorStatus.values())}]];
+    const saidasLabels = [[${relatorio.getTopSaidas(10).![sku]}]];
+    const saidasData   = [[${relatorio.getTopSaidas(10).![producao]}]];
+    const estoqueLabels = [[${relatorio.getTopEstoque(10).![sku]}]];
+    const estoqueData   = [[${relatorio.getTopEstoque(10).![contagemAtual]}]];
+    /*]]>*/
+
+    const coresStatus = { CRITICO: '#ff0000', REGULAR: '#ffd000', OK: '#198754', INDEFINIDO: '#6c757d' };
+
+    new Chart(document.getElementById('graficoStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: statusLabels.map(s => coresStatus[s] || '#6c757d')
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('graficoSaidas'), {
+        type: 'bar',
+        data: {
+            labels: saidasLabels,
+            datasets: [{
+                label: 'Saída no dia (un.)',
+                data: saidasData,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('graficoEstoque'), {
+        type: 'bar',
+        data: {
+            labels: estoqueLabels,
+            datasets: [{
+                label: 'Estoque atual (un.)',
+                data: estoqueData,
+                backgroundColor: '#198754'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+    })();
+</script>
+<script th:src="@{/js/filtros.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

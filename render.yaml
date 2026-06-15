@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: clickfortearmz
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # O perfil prod exige todos os segredos e desabilita recursos de desenvolvimento.
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # H2 em arquivo dentro do container (efêmero no plano free).
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:h2:file:/app/data/contagemdb;AUTO_SERVER=TRUE
+      # Cache do Thymeleaf ligado em produção (renderização mais rápida).
+      - key: SPRING_THYMELEAF_CACHE
+        value: "true"
+      # ─── Segredos: preencher no painel do Render (sync:false) ───
+      - key: DB_PASSWORD
+        sync: false
+      - key: APP_AUTH_USERNAME
+        sync: false
+      - key: APP_AUTH_PASSWORD
+        sync: false
+      - key: APP_CRYPTO_PASSWORD
+        sync: false
+      - key: APP_CRYPTO_SALT
+        sync: false

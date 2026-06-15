@@ -1,0 +1,38 @@
+/* Ajustes de responsividade / mobile compartilhados */
+
+/* Navbar: deixa logo e botões quebrarem linha em telas estreitas */
+.navbar > .container {
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    max-width: 55vw;
+    object-fit: contain;
+}
+
+/* Caixa dos gráficos com altura controlada (evita canvas gigante no mobile) */
+.grafico-box {
+    position: relative;
+    width: 100%;
+    height: 280px;
+}
+
+/* Inputs de filtro no cabeçalho das tabelas não esmagam */
+table.tabela-filtravel tr.filtros input {
+    min-width: 90px;
+}
+
+/* Tabelas largas: fonte um pouco menor no celular para caber mais colunas */
+@media (max-width: 575.98px) {
+    .table-responsive table {
+        font-size: .85rem;
+    }
+    .display-6 {
+        font-size: 1.6rem;
+    }
+    .navbar-brand img {
+        height: 28px;
+    }
+}

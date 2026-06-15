@@ -1,0 +1,16 @@
+target/
+data/
+*.log
+run.log
+run.err
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+HELP.md
+.env
+.env.*
+*.mv.db
+*.trace.db
+secrets/

@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    image: clickforte-contagem:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      # Bind mount: o banco H2 fica em ./data no host e persiste entre rebuilds/reinícios.
+      - ./data:/app/data
+    environment:
+      # Senha do banco repassada do host (vazio = sem senha, default local).
+      # auth e cripto usam os defaults de dev localmente; em produção vêm do Render.
+      - DB_PASSWORD=${DB_PASSWORD:-}
+    restart: unless-stopped

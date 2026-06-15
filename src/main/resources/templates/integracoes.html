@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Integrações — ClickForte</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/app.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-umd.min.js"></script>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2 mb-0" th:href="@{/}">
+            <img src="https://war-machine.s3.sa-east-1.amazonaws.com/seller/521/logo/96169866-logo-alta-2552x1080.png"
+                 alt="ClickForte Armazenagem" height="40">
+        </a>
+        <div class="d-flex gap-2">
+            <a th:href="@{/}" class="btn btn-sm btn-outline-light">Início</a>
+            <form th:action="@{/logout}" method="post" data-turbo="false" class="mb-0">
+                <button type="submit" class="btn btn-sm btn-outline-light">Sair</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-7">
+
+            <h4 class="mb-3">🔌 Integrações</h4>
+
+            <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">API do Omie</h6>
+                    <small class="text-muted">
+                        Credenciais geradas em
+                        <a href="https://developer.omie.com.br/service-list/" target="_blank" rel="noopener">developer.omie.com.br</a>.
+                        O App Secret é guardado criptografado (AES-256).
+                    </small>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/integracoes}" method="post" data-turbo="false">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">App Key</label>
+                            <input type="text" name="appKey" class="form-control"
+                                   th:value="${appKey}" placeholder="App Key do Omie">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">App Secret</label>
+                            <input type="password" name="appSecret" class="form-control" autocomplete="new-password"
+                                   th:placeholder="${temAppSecret} ? '•••••••• (já configurado — deixe em branco para manter)' : 'Informe o App Secret'">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+
+            <p class="text-muted small mt-3 mb-0">
+                Por segurança, os segredos não são exibidos após salvos. Para trocá-los,
+                basta informar o novo valor; deixando em branco, o valor atual é mantido.
+            </p>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>
