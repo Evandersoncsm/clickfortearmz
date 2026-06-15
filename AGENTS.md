@@ -30,7 +30,8 @@ O contrato HTTP executavel esta em `/v3/api-docs/clickforte-web` e a interface v
 - A contagem usa a ultima aba da planilha e faz upsert por data; sem data, usa o nome da aba.
 - Cobertura e status de estoque sao calculados no dominio, nao lidos das formulas do Excel.
 - A producao usa a primeira aba e fica somente em memoria; reiniciar o processo apaga a programacao.
-- O App Secret da Omie nunca deve ser exibido e e cifrado antes de ir ao banco.
+- Cada conta Omie possui credenciais isoladas; o App Secret nunca deve ser exibido e e cifrado antes de ir ao banco.
+- Toda consulta futura a Omie deve receber explicitamente o identificador da conta usada.
 - Alterar `APP_CRYPTO_PASSWORD` ou `APP_CRYPTO_SALT` invalida segredos ja cifrados.
 - `/integracoes/**` e `/h2-console/**` exigem login. As demais telas e a documentacao Swagger sao publicas.
 - Os POSTs MVC usam CSRF e retornam redirecionamentos. Nao os trate como API JSON.

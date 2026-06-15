@@ -26,35 +26,71 @@ public class IntegracaoController {
 
     @GetMapping("/integracoes")
     @Operation(
-            summary = "Exibe a configuracao da integracao Omie",
-            description = "Requer sessao autenticada. Nunca devolve o App Secret salvo; informa apenas se ele existe.")
+            summary = "Lista e edita contas da integracao Omie",
+            description = "Requer sessao autenticada. Suporta varias contas e nunca devolve os App Secrets salvos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Pagina HTML de configuracao"),
             @ApiResponse(responseCode = "302", description = "Sem sessao; redireciona para /login")
     })
-    public String form(@Parameter(hidden = true) Model model) {
-        model.addAttribute("appKey", servico.appKey());
-        model.addAttribute("temAppSecret", servico.temAppSecret());
+    public String form(
+            @Parameter(description = "Identificador da conta a editar")
+            @RequestParam(value = "conta", required = false) Long contaId,
+            @Parameter(hidden = true) Model model,
+            @Parameter(hidden = true) RedirectAttributes redirect) {
+        model.addAttribute("contas", servico.listar());
+        try {
+            model.addAttribute("conta", servico.buscar(contaId));
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+            return "redirect:/integracoes";
+        }
         return "integracoes";
     }
 
     @PostMapping("/integracoes")
     @Operation(
-            summary = "Salva as credenciais da integracao Omie",
-            description = "Requer sessao e token CSRF. O App Secret e cifrado antes de ser persistido; "
-                    + "quando enviado em branco, o segredo atual e preservado.")
+            summary = "Cria ou atualiza uma conta Omie",
+            description = "Requer sessao e token CSRF. Cada App Secret e cifrado separadamente; "
+                    + "ao editar, um segredo em branco preserva o valor atual.")
     @ApiResponses({
             @ApiResponse(responseCode = "302", description = "Configuracao salva; redireciona para /integracoes"),
             @ApiResponse(responseCode = "403", description = "Sessao ou token CSRF invalido")
     })
     public String salvar(
+            @Parameter(description = "Identificador da conta; vazio cria uma nova")
+            @RequestParam(value = "id", required = false) Long id,
+            @Parameter(description = "Nome interno para identificar a conta")
+            @RequestParam("nome") String nome,
             @Parameter(description = "App Key fornecida pela Omie")
-            @RequestParam(value = "appKey", required = false) String appKey,
+            @RequestParam("appKey") String appKey,
             @Parameter(description = "App Secret; em branco mantem o valor salvo")
             @RequestParam(value = "appSecret", required = false) String appSecret,
             @Parameter(hidden = true) RedirectAttributes redirect) {
-        servico.salvar(appKey, appSecret);
-        redirect.addFlashAttribute("sucesso", "Integração salva com segurança.");
+        try {
+            ContaOmie conta = servico.salvar(id, nome, appKey, appSecret);
+            redirect.addFlashAttribute("sucesso", "Conta Omie salva com segurança.");
+            return "redirect:/integracoes?conta=" + conta.id();
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+            return id == null ? "redirect:/integracoes" : "redirect:/integracoes?conta=" + id;
+        }
+    }
+
+    @PostMapping("/integracoes/excluir")
+    @Operation(summary = "Exclui uma conta Omie cadastrada")
+    @ApiResponses({
+            @ApiResponse(responseCode = "302", description = "Conta excluida; redireciona para /integracoes"),
+            @ApiResponse(responseCode = "403", description = "Sessao ou token CSRF invalido")
+    })
+    public String excluir(
+            @Parameter(description = "Identificador da conta") @RequestParam("id") Long id,
+            @Parameter(hidden = true) RedirectAttributes redirect) {
+        try {
+            servico.excluir(id);
+            redirect.addFlashAttribute("sucesso", "Conta Omie excluída.");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/integracoes";
     }
 }

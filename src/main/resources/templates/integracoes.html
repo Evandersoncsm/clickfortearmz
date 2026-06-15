@@ -26,44 +26,125 @@
 
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-7">
+        <div class="col-12 col-xl-10">
 
             <h4 class="mb-3">🔌 Integrações</h4>
 
             <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+            <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h6 class="mb-0">API do Omie</h6>
-                    <small class="text-muted">
-                        Credenciais geradas em
-                        <a href="https://developer.omie.com.br/service-list/" target="_blank" rel="noopener">developer.omie.com.br</a>.
-                        O App Secret é guardado criptografado (AES-256).
-                    </small>
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex align-items-center justify-content-between gap-2">
+                            <h6 class="mb-0">Contas Omie</h6>
+                            <a th:href="@{/integracoes}" class="btn btn-sm btn-primary">Nova conta</a>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            <div th:if="${#lists.isEmpty(contas)}" class="p-3 text-body-secondary small">
+                                Nenhuma conta cadastrada.
+                            </div>
+                            <a th:each="item : ${contas}"
+                               th:href="@{/integracoes(conta=${item.id})}"
+                               class="list-group-item list-group-item-action"
+                               th:classappend="${conta.id == item.id} ? ' active' : ''">
+                                <div class="fw-semibold" th:text="${item.nome}">Conta Omie</div>
+                                <small th:text="${item.temAppSecret} ? 'Credenciais configuradas' : 'App Secret pendente'">
+                                    Credenciais configuradas
+                                </small>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form th:action="@{/integracoes}" method="post" data-turbo="false">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">App Key</label>
-                            <input type="text" name="appKey" class="form-control"
-                                   th:value="${appKey}" placeholder="App Key do Omie">
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">App Secret</label>
-                            <input type="password" name="appSecret" class="form-control" autocomplete="new-password"
-                                   th:placeholder="${temAppSecret} ? '•••••••• (já configurado — deixe em branco para manter)' : 'Informe o App Secret'">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0" th:text="${conta.id == null} ? 'Adicionar conta Omie' : 'Editar conta Omie'">
+                                Adicionar conta Omie
+                            </h6>
+                            <small class="text-muted">
+                                Cada conta mantém seu próprio App Key e App Secret criptografado.
+                            </small>
                         </div>
+                        <div class="card-body">
+                            <form th:action="@{/integracoes}" method="post" data-turbo="false">
+                                <input type="hidden" name="id" th:value="${conta.id}">
 
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                    </form>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Nome da conta</label>
+                                    <input type="text" name="nome" class="form-control" maxlength="120" required
+                                           th:value="${conta.nome}" placeholder="Ex.: Matriz, Filial SP, Empresa 2">
+                                    <div class="form-text">Nome interno usado para escolher a conta nas consultas.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">App Key</label>
+                                    <input type="text" name="appKey" class="form-control" required
+                                           th:value="${conta.appKey}" placeholder="App Key do Omie">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">App Secret</label>
+                                    <input type="password" name="appSecret" class="form-control"
+                                           autocomplete="new-password" th:required="${!conta.temAppSecret}"
+                                           th:placeholder="${conta.temAppSecret} ? '•••••••• (deixe em branco para manter)' : 'Informe o App Secret'">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Salvar conta</button>
+                                <a th:href="@{/integracoes}" class="btn btn-outline-secondary">Limpar formulário</a>
+                            </form>
+
+                            <form th:if="${conta.id != null}" th:action="@{/integracoes/excluir}" method="post"
+                                  data-turbo="false" class="mt-3 pt-3 border-top"
+                                  onsubmit="return confirm('Excluir esta conta Omie e suas credenciais?');">
+                                <input type="hidden" name="id" th:value="${conta.id}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir conta</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mt-3 mb-0">
+                        Por segurança, os segredos não são exibidos após salvos. Para trocá-los,
+                        informe o novo valor; deixando em branco durante uma edição, o valor atual é mantido.
+                    </p>
                 </div>
             </div>
 
-            <p class="text-muted small mt-3 mb-0">
-                Por segurança, os segredos não são exibidos após salvos. Para trocá-los,
-                basta informar o novo valor; deixando em branco, o valor atual é mantido.
-            </p>
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Como consultar a API Omie</h6>
+                </div>
+                <div class="card-body">
+                    <p>
+                        As consultas da API Omie usam o método HTTP <strong>POST</strong>, inclusive para listar
+                        ou consultar dados. Cada serviço possui seu próprio endpoint, informado na
+                        <a href="https://developer.omie.com.br/service-list/"
+                           target="_blank" rel="noopener noreferrer">documentação oficial da Omie</a>.
+                    </p>
+
+                    <p class="mb-2"><strong>Exemplo: listar produtos</strong></p>
+                    <pre class="bg-dark text-light rounded p-3 overflow-auto"><code>POST https://app.omie.com.br/api/v1/geral/produtos/
+Content-Type: application/json
+
+{
+  "call": "ListarProdutos",
+  "app_key": "SUA_APP_KEY",
+  "app_secret": "SEU_APP_SECRET",
+  "param": [
+    {
+      "pagina": 1,
+      "registros_por_pagina": 50
+    }
+  ]
+}</code></pre>
+
+                    <div class="alert alert-warning mb-0" role="alert">
+                        O App Secret deve ser usado somente pelo servidor. Nunca coloque essa credencial em
+                        JavaScript, HTML, Swagger público, logs ou mensagens de erro.
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>

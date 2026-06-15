@@ -3,10 +3,11 @@ package com.app.and.integracao;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.List;
+
 @Service
 public class IntegracaoService {
-
-    private static final Long ID_FIXO = 1L;
 
     private final IntegracaoRepository repositorio;
     private final CryptoService crypto;
@@ -16,42 +17,104 @@ public class IntegracaoService {
         this.crypto = crypto;
     }
 
-    /** App Key do Omie em texto puro (não é segredo) ou vazio se nunca configurado. */
-    public String appKey() {
-        return repositorio.findById(ID_FIXO).map(IntegracaoEntity::getAppKey).orElse("");
+    @Transactional(readOnly = true)
+    public List<ContaOmie> listar() {
+        return repositorio.findAll().stream()
+                .map(this::paraConta)
+                .sorted(Comparator.comparing(ContaOmie::nome, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
-    public boolean temAppSecret() {
-        return repositorio.findById(ID_FIXO)
-                .map(e -> e.getAppSecret() != null && !e.getAppSecret().isBlank())
-                .orElse(false);
+    @Transactional(readOnly = true)
+    public ContaOmie buscar(Long id) {
+        if (id == null) {
+            return ContaOmie.nova();
+        }
+        return repositorio.findById(id)
+                .map(this::paraConta)
+                .orElseThrow(() -> new IllegalArgumentException("Conta Omie não encontrada."));
     }
 
-    /** App Secret decifrado, para uso nas chamadas à API do Omie. */
-    public String appSecretDecifrado() {
-        return repositorio.findById(ID_FIXO)
-                .map(e -> crypto.decrypt(e.getAppSecret()))
-                .orElse(null);
+    /** Credenciais de uma conta específica, para chamadas feitas somente no servidor. */
+    @Transactional(readOnly = true)
+    public CredenciaisOmie credenciais(Long id) {
+        IntegracaoEntity entidade = repositorio.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conta Omie não encontrada."));
+        return new CredenciaisOmie(
+                entidade.getId(),
+                nomeDa(entidade),
+                texto(entidade.getAppKey()),
+                crypto.decrypt(entidade.getAppSecret()));
     }
 
     /**
-     * Salva as credenciais. App Secret em branco mantém o valor atual
-     * (para não exigir redigitar o segredo a cada alteração).
+     * Cria ou atualiza uma conta. App Secret em branco mantém o valor atual.
      */
     @Transactional
-    public void salvar(String appKey, String appSecret) {
-        IntegracaoEntity entidade = repositorio.findById(ID_FIXO).orElseGet(() -> {
-            IntegracaoEntity nova = new IntegracaoEntity();
-            nova.setId(ID_FIXO);
-            return nova;
-        });
+    public synchronized ContaOmie salvar(Long id, String nome, String appKey, String appSecret) {
+        String nomeNormalizado = obrigatorio(nome, "Informe um nome para identificar a conta.");
+        String appKeyNormalizada = obrigatorio(appKey, "Informe o App Key da conta Omie.");
+        boolean novaConta = id == null;
 
-        entidade.setAppKey(appKey == null ? "" : appKey.trim());
+        IntegracaoEntity entidade = novaConta ? novaEntidade() : repositorio.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conta Omie não encontrada."));
+
+        if (novaConta && (appSecret == null || appSecret.isBlank())) {
+            throw new IllegalArgumentException("Informe o App Secret da nova conta Omie.");
+        }
+
+        entidade.setNome(nomeNormalizado);
+        entidade.setAppKey(appKeyNormalizada);
 
         if (appSecret != null && !appSecret.isBlank()) {
             entidade.setAppSecret(crypto.encrypt(appSecret.trim()));
         }
 
-        repositorio.save(entidade);
+        return paraConta(repositorio.save(entidade));
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+        if (id == null || !repositorio.existsById(id)) {
+            throw new IllegalArgumentException("Conta Omie não encontrada.");
+        }
+        repositorio.deleteById(id);
+    }
+
+    private IntegracaoEntity novaEntidade() {
+        long proximoId = repositorio.findAll().stream()
+                .map(IntegracaoEntity::getId)
+                .filter(java.util.Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L) + 1;
+        IntegracaoEntity entidade = new IntegracaoEntity();
+        entidade.setId(proximoId);
+        return entidade;
+    }
+
+    private ContaOmie paraConta(IntegracaoEntity entidade) {
+        return new ContaOmie(
+                entidade.getId(),
+                nomeDa(entidade),
+                texto(entidade.getAppKey()),
+                entidade.getAppSecret() != null && !entidade.getAppSecret().isBlank());
+    }
+
+    private String nomeDa(IntegracaoEntity entidade) {
+        String nome = texto(entidade.getNome());
+        return nome.isBlank() ? "Conta Omie " + entidade.getId() : nome;
+    }
+
+    private String obrigatorio(String valor, String mensagem) {
+        String normalizado = texto(valor);
+        if (normalizado.isBlank()) {
+            throw new IllegalArgumentException(mensagem);
+        }
+        return normalizado;
+    }
+
+    private String texto(String valor) {
+        return valor == null ? "" : valor.trim();
     }
 }

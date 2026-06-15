@@ -100,9 +100,16 @@ Esta informacao nao e persistente. Um restart, deploy ou nova instancia perde a 
 ### Integracao Omie
 
 1. `GET /integracoes` mostra App Key e apenas informa se existe segredo.
-2. `POST /integracoes` mantem o segredo atual quando o campo vier vazio.
-3. `CryptoService` cifra o App Secret com AES antes da persistencia.
-4. `IntegracaoService.appSecretDecifrado()` e o ponto de acesso futuro para o cliente Omie.
+2. A tela permite cadastrar e selecionar varias contas Omie por nome e identificador.
+3. `POST /integracoes` cria ou atualiza uma conta e mantem o segredo atual quando o campo vier vazio.
+4. `POST /integracoes/excluir` remove somente a conta selecionada.
+5. `CryptoService` cifra separadamente o App Secret de cada conta antes da persistencia.
+6. `IntegracaoService.credenciais(contaId)` e o ponto de acesso futuro para o cliente Omie.
+
+As chamadas futuras para a API Omie devem usar `POST` com `Content-Type: application/json`, mesmo em
+operacoes de consulta. O corpo segue o contrato `call`, `app_key`, `app_secret` e `param`. Cada familia
+de servicos possui um endpoint proprio, definido na documentacao oficial da Omie. O App Secret deve ser
+injetado apenas no cliente executado no servidor e nunca enviado para templates ou JavaScript.
 
 Existe um unico registro de integracao, com `id = 1`.
 
@@ -117,7 +124,8 @@ Existe um unico registro de integracao, com `id = 1`.
 | GET | `/producao` | Publica | Ultima programacao em memoria |
 | GET | `/login` | Publica | Formulario de login |
 | GET | `/integracoes` | Sessao | Configuracao Omie |
-| POST | `/integracoes` | Sessao + CSRF | Salva configuracao Omie |
+| POST | `/integracoes` | Sessao + CSRF | Cria ou atualiza uma conta Omie |
+| POST | `/integracoes/excluir` | Sessao + CSRF | Exclui uma conta Omie |
 | GET | `/swagger-ui.html` | Publica | Swagger UI |
 | GET | `/v3/api-docs/clickforte-web` | Publica | Contrato OpenAPI JSON |
 | GET | `/h2-console` | Sessao | Console do banco, habilitado por configuracao |
@@ -130,7 +138,7 @@ Tabelas atuais:
 
 - `contagem`: cabecalho de um dia, chave unica, aba e data.
 - `item_contagem`: itens ligados a uma contagem.
-- `integracao`: App Key e App Secret cifrado da Omie.
+- `integracao`: uma linha por conta Omie, com nome, App Key e App Secret cifrado.
 
 O schema e atualizado por `spring.jpa.hibernate.ddl-auto=update`. Em evolucoes maiores, adote Flyway antes de depender de migracoes de producao.
 

@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Credenciais da API do Omie. Mantemos um único registro (id = 1).
+ * Credenciais de uma conta Omie. Cada registro representa uma empresa/conta.
  * O App Secret fica cifrado no banco; o App Key não é segredo.
  */
 @Entity
@@ -14,7 +14,10 @@ import jakarta.persistence.Table;
 public class IntegracaoEntity {
 
     @Id
-    private Long id = 1L;
+    private Long id;
+
+    @Column(length = 120)
+    private String nome;
 
     @Column(length = 255)
     private String appKey;
@@ -28,6 +31,14 @@ public class IntegracaoEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     public String getAppKey() {
